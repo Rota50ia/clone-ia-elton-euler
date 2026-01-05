@@ -14,6 +14,7 @@ interface Message {
 }
 
 const STORAGE_KEY = 'clone-ia-chat-history';
+const THREAD_KEY = 'clone-ia-thread-id';
 
 const loadMessages = (): Message[] => {
   try {
@@ -32,8 +33,25 @@ const saveMessages = (messages: Message[]) => {
   }
 };
 
+const loadThreadId = (): string | null => {
+  try {
+    return localStorage.getItem(THREAD_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const saveThreadId = (threadId: string) => {
+  try {
+    localStorage.setItem(THREAD_KEY, threadId);
+  } catch (error) {
+    console.error('Failed to save threadId:', error);
+  }
+};
+
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>(loadMessages);
+  const [threadId, setThreadId] = useState<string | null>(loadThreadId);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -45,7 +63,9 @@ const Index = () => {
 
   const clearHistory = () => {
     setMessages([]);
+    setThreadId(null);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(THREAD_KEY);
   };
 
   const scrollToBottom = () => {
@@ -86,6 +106,7 @@ const Index = () => {
           },
           body: JSON.stringify({
             message: userMessage,
+            threadId: threadId,
             timestamp: new Date().toISOString(),
           }),
         }
@@ -96,6 +117,12 @@ const Index = () => {
       }
 
       const data = await response.json();
+
+      // Save threadId if returned
+      if (data.threadId) {
+        setThreadId(data.threadId);
+        saveThreadId(data.threadId);
+      }
 
       setMessages((prev) => [
         ...prev,
