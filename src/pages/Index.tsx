@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, FormEvent } from 'react';
+import { Trash2 } from 'lucide-react';
 import ChatAvatar from '@/components/ChatAvatar';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
@@ -12,11 +13,40 @@ interface Message {
   timestamp: string;
 }
 
+const STORAGE_KEY = 'clone-ia-chat-history';
+
+const loadMessages = (): Message[] => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveMessages = (messages: Message[]) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch (error) {
+    console.error('Failed to save messages:', error);
+  }
+};
+
 const Index = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(loadMessages);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    saveMessages(messages);
+  }, [messages]);
+
+  const clearHistory = () => {
+    setMessages([]);
+    localStorage.removeItem(STORAGE_KEY);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,8 +163,20 @@ const Index = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-4 text-muted-foreground/60 text-xs font-display tracking-wider">
-          <p>Sistema de IA • Conectado via N8N</p>
+        <div className="flex items-center justify-center gap-4 mt-4">
+          <p className="text-muted-foreground/60 text-xs font-display tracking-wider">
+            Sistema de IA • Conectado via N8N
+          </p>
+          {messages.length > 0 && (
+            <button
+              onClick={clearHistory}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground/40 hover:text-destructive transition-colors"
+              title="Limpar histórico"
+            >
+              <Trash2 className="w-3 h-3" />
+              Limpar
+            </button>
+          )}
         </div>
       </div>
     </div>
