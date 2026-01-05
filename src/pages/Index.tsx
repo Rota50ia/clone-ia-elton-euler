@@ -101,7 +101,7 @@ const Index = () => {
         ...prev,
         {
           type: 'bot',
-          content: data.response || data.message || JSON.stringify(data),
+          content: data.output || data.response || data.message || JSON.stringify(data),
           timestamp: getCurrentTime(),
         },
       ]);
